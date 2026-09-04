@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://kim-taeyoon1001.github.io/saas/sitemap.xml
