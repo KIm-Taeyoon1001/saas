@@ -70,6 +70,40 @@ claude mcp add analytics-gsc \
 
 등록 후 새 세션에서 "GA4 속성 123456789의 최근 7일 리포트 보여줘" 처럼 요청하면 `ga4_run_report` 도구가 호출됩니다.
 
+## 7. (선택) Vercel에 상시 배포하기
+
+로컬 실행(위 5번) 대신, 컴퓨터를 꺼도 항상 켜져 있는 원격 MCP 서버로 쓰고 싶다면 Vercel에 배포할 수 있습니다. `api/mcp.js`가 그 진입점이며, HTTP 방식(Streamable HTTP)으로 동작합니다.
+
+**주의**: 배포하면 인터넷에 공개된 URL이 생기므로 반드시 인증 토큰(`MCP_AUTH_TOKEN`)을 설정해야 합니다. 토큰이 없으면 서버가 모든 요청을 401로 거부하도록 만들어뒀습니다.
+
+### 7-1. Vercel 프로젝트 생성
+1. https://vercel.com 에서 GitHub 계정으로 로그인
+2. "Add New" → "Project" → 이 저장소(`KIm-Taeyoon1001/saas`) 선택
+3. **Root Directory**를 `tools/analytics-gsc-mcp`로 설정 (중요: 이거 안 하면 세금 계산기 사이트를 빌드하려고 시도해서 실패함)
+4. Framework Preset은 "Other"로 두고 Deploy
+
+### 7-2. 환경변수 설정
+Vercel 프로젝트 → Settings → Environment Variables에 2개 추가:
+
+| 이름 | 값 |
+|---|---|
+| `GOOGLE_SERVICE_ACCOUNT_KEY` | 다운로드한 서비스계정 JSON 파일의 **전체 내용**을 그대로 붙여넣기 (한 줄이어도 됨) |
+| `MCP_AUTH_TOKEN` | 아무 랜덤 문자열. 터미널에서 `openssl rand -hex 32` 실행해서 생성하면 편함 |
+
+설정 후 "Redeploy" 한 번 눌러줘야 반영됩니다.
+
+### 7-3. 배포 URL 확인
+배포 완료되면 `https://<프로젝트이름>.vercel.app/api/mcp` 형태의 URL이 생깁니다.
+
+### 7-4. Claude Code에 원격으로 등록
+```bash
+claude mcp add analytics-gsc-remote --transport http https://<프로젝트이름>.vercel.app/api/mcp --header "Authorization: Bearer <MCP_AUTH_TOKEN 값>"
+```
+(정확한 옵션명은 Claude Code 버전에 따라 다를 수 있어 `claude mcp add --help`로 확인 후 조정하세요.)
+
+로컬용(`analytics-gsc`)과 원격용(`analytics-gsc-remote`)을 동시에 등록해두고 필요에 따라 골라 써도 됩니다.
+
 ## 참고
 - 이 서버는 **읽기 전용(readonly)** 스코프만 사용합니다.
 - AdSense는 공식 커넥터/MCP가 없어 별도 확장이 필요합니다. 필요해지면 `adsense.readonly` 스코프와 AdSense Management API를 추가해 같은 방식으로 붙일 수 있습니다.
+- `GOOGLE_SERVICE_ACCOUNT_KEY`(Vercel 환경변수)와 `GOOGLE_APPLICATION_CREDENTIALS`(로컬 키 파일 경로)는 서로 다른 인증 방식입니다. 로컬 실행 시엔 후자만, Vercel 배포 시엔 전자만 사용하면 됩니다.
