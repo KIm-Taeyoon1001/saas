@@ -3,10 +3,6 @@
   "version": "1.0.0",
   "description": "GA4 + Google Search Console MCP server (service account auth)",
   "type": "module",
-  "main": "src/index.js",
-  "bin": {
-    "analytics-gsc-mcp": "src/index.js"
-  },
   "scripts": {
     "start": "node src/index.js"
   },
