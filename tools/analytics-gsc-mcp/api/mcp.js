@@ -6,6 +6,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { GoogleAuth } from "google-auth-library";
 import { google } from "googleapis";
 import { z } from "zod";
+import { verify } from "./_lib/crypto.js";
 
 const SCOPES = [
   "https://www.googleapis.com/auth/analytics.readonly",
@@ -156,14 +157,26 @@ function createServer() {
 }
 
 function isAuthorized(req) {
-  const expected = process.env.MCP_AUTH_TOKEN;
-  if (!expected) return false;
+  const secret = process.env.MCP_AUTH_TOKEN;
+  if (!secret) return false;
   const header = req.headers["authorization"] || "";
-  return header === `Bearer ${expected}`;
+  const token = header.startsWith("Bearer ") ? header.slice(7) : null;
+  if (!token) return false;
+
+  const payload = verify(token, secret);
+  if (!payload || payload.type !== "access") return false;
+
+  const expectedAud = `https://${req.headers.host}/api/mcp`;
+  return payload.aud === expectedAud;
 }
 
 export default async function handler(req, res) {
   if (!isAuthorized(req)) {
+    const origin = `https://${req.headers.host}`;
+    res.setHeader(
+      "WWW-Authenticate",
+      `Bearer resource_metadata="${origin}/.well-known/oauth-protected-resource"`
+    );
     res.status(401).json({ error: "Unauthorized" });
     return;
   }

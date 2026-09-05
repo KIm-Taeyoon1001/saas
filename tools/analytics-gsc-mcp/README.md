@@ -95,13 +95,24 @@ Vercel 프로젝트 → Settings → Environment Variables에 2개 추가:
 ### 7-3. 배포 URL 확인
 배포 완료되면 `https://<프로젝트이름>.vercel.app/api/mcp` 형태의 URL이 생깁니다.
 
-### 7-4. Claude Code에 원격으로 등록
+### 7-4. Claude Code에 원격으로 등록 (선택 A: 고정 토큰)
 ```bash
 claude mcp add analytics-gsc-remote --transport http https://<프로젝트이름>.vercel.app/api/mcp --header "Authorization: Bearer <MCP_AUTH_TOKEN 값>"
 ```
 (정확한 옵션명은 Claude Code 버전에 따라 다를 수 있어 `claude mcp add --help`로 확인 후 조정하세요.)
 
 로컬용(`analytics-gsc`)과 원격용(`analytics-gsc-remote`)을 동시에 등록해두고 필요에 따라 골라 써도 됩니다.
+
+## 8. claude.ai 앱에 "커넥터"로 등록하기 (선택 B: OAuth)
+
+Claude Code CLI 없이 claude.ai 웹/모바일 앱에서 바로 쓰려면, 이 서버는 자체 OAuth 인증 서버 역할도 겸하도록 만들어져 있습니다 (`/authorize`, `/token`, `/register`, `/.well-known/oauth-*`). 별도 회원 시스템 없이, `MCP_AUTH_TOKEN` 값을 로그인 비밀번호처럼 한 번 입력하는 방식입니다.
+
+1. claude.ai → 설정 → Connectors → "Add custom connector"
+2. URL에 `https://<프로젝트이름>.vercel.app/api/mcp` 입력
+3. 승인 화면이 뜨면 `MCP_AUTH_TOKEN` 값을 비밀번호 칸에 입력 → 허용
+4. 이후 claude.ai 어디서든 (컴퓨터 없이, 모바일 앱 포함) 이 도구들을 바로 사용 가능
+
+**보안 참고**: 발급된 접속 토큰은 90일간 유효합니다(자동 갱신 없음, 개인용 단순화). `MCP_AUTH_TOKEN` 값을 아는 사람만 승인 화면을 통과할 수 있으므로, 이 값을 아무에게나 공유하지 마세요.
 
 ## 참고
 - 이 서버는 **읽기 전용(readonly)** 스코프만 사용합니다.
